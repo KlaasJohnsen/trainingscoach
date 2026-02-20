@@ -522,12 +522,11 @@ Antworte NUR mit dem JSON, ohne Erklärung.`
     document.getElementById('errorMsg').style.display = 'none';
 
     try {
-      const response = await fetch('https://api.anthropic.com/v1/messages', {
+      const PROXY_URL = 'https://script.google.com/a/macros/mico-consulting.com/s/AKfycbyfg1SV2iufDojKd-o_hT_3QD-_JmCc5TD7I6S_xQLJKv-jF_LhMTqUf26P8Kd8EKOz1A/exec';
+      const response = await fetch(PROXY_URL, {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json',
-          'x-api-key': apiKey,
-          'anthropic-version': '2023-06-01'
+          'Content-Type': 'text/plain'
         },
         body: JSON.stringify({
           model: 'claude-sonnet-4-20250514',
