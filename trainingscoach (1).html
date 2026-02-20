@@ -1,0 +1,659 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Trainingscoach — Daten erfassen</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Playfair+Display:wght@400;700&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0f0f0f;
+    --surface: #1a1a1a;
+    --surface2: #242424;
+    --border: #2e2e2e;
+    --accent: #c8f560;
+    --accent2: #60c8f5;
+    --text: #e8e8e8;
+    --text-muted: #666;
+    --red: #f56060;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'DM Sans', sans-serif;
+    font-weight: 300;
+    min-height: 100vh;
+    padding: 2rem;
+  }
+
+  header {
+    display: flex;
+    align-items: baseline;
+    gap: 1.5rem;
+    margin-bottom: 3rem;
+    border-bottom: 1px solid var(--border);
+    padding-bottom: 1.5rem;
+  }
+
+  header h1 {
+    font-family: 'Playfair Display', serif;
+    font-size: 2rem;
+    font-weight: 400;
+    letter-spacing: -0.02em;
+  }
+
+  header span {
+    font-family: 'DM Mono', monospace;
+    font-size: 0.75rem;
+    color: var(--accent);
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+  }
+
+  .grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1.5rem;
+    max-width: 1100px;
+    margin: 0 auto;
+  }
+
+  @media (max-width: 768px) {
+    .grid { grid-template-columns: 1fr; }
+  }
+
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 1.5rem;
+  }
+
+  .card-title {
+    font-family: 'DM Mono', monospace;
+    font-size: 0.7rem;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    margin-bottom: 1.25rem;
+  }
+
+  .card-title span {
+    color: var(--accent);
+    margin-right: 0.5rem;
+  }
+
+  /* API KEY */
+  .api-input-wrap {
+    display: flex;
+    gap: 0.75rem;
+  }
+
+  input[type="password"], input[type="text"] {
+    flex: 1;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 3px;
+    color: var(--text);
+    font-family: 'DM Mono', monospace;
+    font-size: 0.75rem;
+    padding: 0.75rem 1rem;
+    outline: none;
+    transition: border-color 0.2s;
+  }
+
+  input:focus {
+    border-color: var(--accent);
+  }
+
+  button {
+    background: var(--accent);
+    border: none;
+    border-radius: 3px;
+    color: #0f0f0f;
+    cursor: pointer;
+    font-family: 'DM Mono', monospace;
+    font-size: 0.7rem;
+    font-weight: 500;
+    letter-spacing: 0.08em;
+    padding: 0.75rem 1.25rem;
+    text-transform: uppercase;
+    transition: opacity 0.2s;
+    white-space: nowrap;
+  }
+
+  button:hover { opacity: 0.85; }
+  button:disabled { opacity: 0.4; cursor: not-allowed; }
+
+  button.secondary {
+    background: var(--surface2);
+    color: var(--text);
+    border: 1px solid var(--border);
+  }
+
+  .status-dot {
+    display: inline-block;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--text-muted);
+    margin-right: 0.5rem;
+  }
+  .status-dot.ok { background: var(--accent); }
+
+  /* UPLOAD */
+  .upload-area {
+    border: 1px dashed var(--border);
+    border-radius: 3px;
+    padding: 2rem;
+    text-align: center;
+    cursor: pointer;
+    transition: border-color 0.2s, background 0.2s;
+    position: relative;
+  }
+
+  .upload-area:hover, .upload-area.drag {
+    border-color: var(--accent);
+    background: rgba(200, 245, 96, 0.03);
+  }
+
+  .upload-area input[type="file"] {
+    position: absolute;
+    inset: 0;
+    opacity: 0;
+    cursor: pointer;
+    width: 100%;
+    height: 100%;
+  }
+
+  .upload-icon {
+    font-size: 2rem;
+    margin-bottom: 0.75rem;
+    display: block;
+  }
+
+  .upload-label {
+    font-size: 0.85rem;
+    color: var(--text-muted);
+  }
+
+  .upload-label strong {
+    color: var(--accent);
+    font-weight: 500;
+  }
+
+  .preview-img {
+    max-width: 100%;
+    max-height: 200px;
+    border-radius: 3px;
+    margin-top: 1rem;
+    display: none;
+  }
+
+  /* TYPE SELECTOR */
+  .type-selector {
+    display: flex;
+    gap: 0.5rem;
+    margin-bottom: 1.25rem;
+    flex-wrap: wrap;
+  }
+
+  .type-btn {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 3px;
+    color: var(--text-muted);
+    cursor: pointer;
+    font-family: 'DM Mono', monospace;
+    font-size: 0.65rem;
+    letter-spacing: 0.08em;
+    padding: 0.5rem 0.75rem;
+    text-transform: uppercase;
+    transition: all 0.15s;
+  }
+
+  .type-btn.active {
+    background: rgba(200, 245, 96, 0.1);
+    border-color: var(--accent);
+    color: var(--accent);
+  }
+
+  /* RESULT */
+  .result-area {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 3px;
+    padding: 1.25rem;
+    min-height: 120px;
+    font-family: 'DM Mono', monospace;
+    font-size: 0.78rem;
+    line-height: 1.8;
+    display: none;
+  }
+
+  .result-area.visible { display: block; }
+
+  .result-row {
+    display: flex;
+    justify-content: space-between;
+    padding: 0.3rem 0;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .result-row:last-child { border-bottom: none; }
+
+  .result-key { color: var(--text-muted); }
+  .result-value { color: var(--accent); font-weight: 500; }
+
+  /* LOG */
+  .log-area {
+    grid-column: 1 / -1;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 1.5rem;
+  }
+
+  .log-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-family: 'DM Mono', monospace;
+    font-size: 0.72rem;
+  }
+
+  .log-table th {
+    color: var(--text-muted);
+    font-weight: 400;
+    letter-spacing: 0.1em;
+    text-align: left;
+    padding: 0.5rem 1rem 0.5rem 0;
+    border-bottom: 1px solid var(--border);
+    text-transform: uppercase;
+  }
+
+  .log-table td {
+    padding: 0.6rem 1rem 0.6rem 0;
+    border-bottom: 1px solid rgba(46,46,46,0.5);
+    color: var(--text);
+  }
+
+  .log-table td.num { color: var(--accent2); }
+  .log-table tr:last-child td { border-bottom: none; }
+
+  .empty-log {
+    color: var(--text-muted);
+    font-family: 'DM Mono', monospace;
+    font-size: 0.75rem;
+    text-align: center;
+    padding: 2rem;
+  }
+
+  /* LOADING */
+  .spinner {
+    display: none;
+    width: 18px;
+    height: 18px;
+    border: 2px solid var(--border);
+    border-top-color: var(--accent);
+    border-radius: 50%;
+    animation: spin 0.7s linear infinite;
+    margin: 0 auto;
+  }
+
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  .loading .spinner { display: block; }
+  .loading .btn-text { display: none; }
+
+  .error-msg {
+    color: var(--red);
+    font-size: 0.78rem;
+    margin-top: 0.75rem;
+    font-family: 'DM Mono', monospace;
+    display: none;
+  }
+
+  .success-msg {
+    color: var(--accent);
+    font-size: 0.78rem;
+    margin-top: 0.75rem;
+    font-family: 'DM Mono', monospace;
+    display: none;
+  }
+
+  .analyze-btn {
+    width: 100%;
+    margin-top: 1rem;
+    padding: 1rem;
+  }
+
+  .export-btn {
+    margin-top: 1rem;
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>Trainingscoach</h1>
+  <span>● Daten erfassen & analysieren</span>
+</header>
+
+<div class="grid">
+
+  <!-- API KEY -->
+  <div class="card">
+    <div class="card-title"><span>01</span> Anthropic API Key</div>
+    <div class="api-input-wrap">
+      <input type="password" id="apiKey" placeholder="sk-ant-..." />
+      <button onclick="saveKey()">Speichern</button>
+    </div>
+    <div class="success-msg" id="keyMsg">
+      <span class="status-dot ok"></span>Key gespeichert
+    </div>
+  </div>
+
+  <!-- INFO -->
+  <div class="card">
+    <div class="card-title"><span>02</span> Wie es funktioniert</div>
+    <div style="font-size:0.82rem; line-height:1.9; color: var(--text-muted);">
+      1. API Key einmal eingeben<br>
+      2. Foto auswählen (Waage, HRV, Essen)<br>
+      3. Typ auswählen → Analysieren<br>
+      4. Daten werden automatisch ausgelesen<br>
+      5. Alle Einträge als CSV exportieren
+    </div>
+  </div>
+
+  <!-- UPLOAD & ANALYSE -->
+  <div class="card">
+    <div class="card-title"><span>03</span> Foto hochladen</div>
+
+    <div class="type-selector">
+      <button class="type-btn active" data-type="waage" onclick="setType(this)">⚖️ Waage</button>
+      <button class="type-btn" data-type="hrv" onclick="setType(this)">💓 HRV</button>
+      <button class="type-btn" data-type="ernaehrung" onclick="setType(this)">🥗 Ernährung</button>
+      <button class="type-btn" data-type="training" onclick="setType(this)">🏊 Training</button>
+    </div>
+
+    <div class="upload-area" id="uploadArea">
+      <input type="file" id="fileInput" accept="image/*" onchange="handleFile(event)" />
+      <span class="upload-icon">📷</span>
+      <div class="upload-label">Foto hier ablegen oder <strong>klicken</strong></div>
+    </div>
+    <img id="previewImg" class="preview-img" />
+
+    <button class="analyze-btn" id="analyzeBtn" onclick="analyze()" disabled>
+      <span class="btn-text">Analysieren</span>
+      <div class="spinner"></div>
+    </button>
+    <div class="error-msg" id="errorMsg"></div>
+  </div>
+
+  <!-- ERGEBNIS -->
+  <div class="card">
+    <div class="card-title"><span>04</span> Ergebnis</div>
+    <div class="result-area" id="resultArea"></div>
+    <div style="color: var(--text-muted); font-size: 0.78rem; font-family: 'DM Mono', monospace; margin-top: 1rem;" id="emptyResult">
+      Noch kein Ergebnis — lade ein Foto hoch und klicke Analysieren.
+    </div>
+    <button class="secondary" style="margin-top: 1rem; display:none;" id="saveBtn" onclick="saveEntry()">✓ Eintrag speichern</button>
+  </div>
+
+  <!-- LOG -->
+  <div class="log-area">
+    <div class="card-title"><span>05</span> Alle Einträge</div>
+    <div id="logContent">
+      <div class="empty-log">Noch keine Einträge gespeichert.</div>
+    </div>
+    <button class="secondary export-btn" onclick="exportCSV()" id="exportBtn" style="display:none;">⬇ Als CSV exportieren</button>
+  </div>
+
+</div>
+
+<script>
+  let currentType = 'waage';
+  let currentImageBase64 = null;
+  let currentResult = null;
+  let entries = JSON.parse(localStorage.getItem('tc_entries') || '[]');
+
+  const prompts = {
+    waage: `Du bist ein Datenassistent. Lies die handschriftlichen Messwerte aus diesem Foto.
+Gib die Daten als JSON zurück mit diesen Feldern (nur die Felder die du erkennst):
+{
+  "datum": "DD.MM.YYYY",
+  "gewicht_kg": Zahl,
+  "koerperfett_pct": Zahl,
+  "muskelmasse_kg": Zahl (berechne aus: Gewicht × (1 - Körperfett/100)),
+  "muskelmasse_waage_pct": Zahl (der dritte Wert falls vorhanden)
+}
+Antworte NUR mit dem JSON, ohne Erklärung.`,
+
+    hrv: `Du bist ein Datenassistent. Lies die HRV-Daten aus diesem Screenshot der HRV4Training App.
+Gib die Daten als JSON zurück:
+{
+  "datum": "heute oder erkennbares Datum",
+  "hrv": Zahl,
+  "ruhepuls": Zahl,
+  "hrv_baseline": Zahl falls sichtbar,
+  "empfehlung": "Text der Empfehlung falls sichtbar"
+}
+Antworte NUR mit dem JSON, ohne Erklärung.`,
+
+    ernaehrung: `Du bist ein Ernährungsassistent. Analysiere dieses Foto von Essen.
+Schätze die Nährwerte und gib als JSON zurück:
+{
+  "datum": "heute",
+  "beschreibung": "kurze Beschreibung",
+  "kalorien_kcal": Zahl,
+  "protein_g": Zahl,
+  "kohlenhydrate_g": Zahl,
+  "fett_g": Zahl,
+  "konfidenz": "hoch/mittel/niedrig"
+}
+Antworte NUR mit dem JSON, ohne Erklärung.`,
+
+    training: `Du bist ein Trainingsassistent. Lies die Trainingsdaten aus diesem Screenshot (TrainingPeaks oder ähnlich).
+Gib die Daten als JSON zurück:
+{
+  "datum": "erkennbares Datum",
+  "sportart": "Schwimmen/Radfahren/Laufen/Kraft",
+  "dauer_min": Zahl,
+  "distanz_km": Zahl falls vorhanden,
+  "tss": Zahl falls vorhanden,
+  "notizen": "weitere erkennbare Infos"
+}
+Antworte NUR mit dem JSON, ohne Erklärung.`
+  };
+
+  function saveKey() {
+    const key = document.getElementById('apiKey').value.trim();
+    if (!key || key.includes('●')) return;
+    // Encode to handle any special characters
+    localStorage.setItem('tc_apikey', btoa(unescape(encodeURIComponent(key))));
+    document.getElementById('keyMsg').style.display = 'block';
+    document.getElementById('apiKey').value = '●●●●●●●●●●●●●●●●';
+  }
+
+  function setType(btn) {
+    document.querySelectorAll('.type-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    currentType = btn.dataset.type;
+  }
+
+  function handleFile(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = e => {
+      const preview = document.getElementById('previewImg');
+      preview.src = e.target.result;
+      preview.style.display = 'block';
+      currentImageBase64 = e.target.result.split(',')[1];
+      document.getElementById('analyzeBtn').disabled = false;
+    };
+    reader.readAsDataURL(file);
+  }
+
+  function getApiKey() {
+    const stored = localStorage.getItem('tc_apikey');
+    if (!stored) return null;
+    try { return decodeURIComponent(escape(atob(stored))); } 
+    catch(e) { return stored; }
+  }
+
+  async function analyze() {
+    const apiKey = getApiKey();
+    if (!apiKey) {
+      showError('Bitte zuerst den API Key eingeben und speichern.');
+      return;
+    }
+    if (!currentImageBase64) {
+      showError('Bitte zuerst ein Foto hochladen.');
+      return;
+    }
+
+    const btn = document.getElementById('analyzeBtn');
+    btn.classList.add('loading');
+    btn.disabled = true;
+    document.getElementById('errorMsg').style.display = 'none';
+
+    try {
+      const response = await fetch('https://api.anthropic.com/v1/messages', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-api-key': apiKey,
+          'anthropic-version': '2023-06-01'
+        },
+        body: JSON.stringify({
+          model: 'claude-sonnet-4-20250514',
+          max_tokens: 1000,
+          messages: [{
+            role: 'user',
+            content: [
+              {
+                type: 'image',
+                source: {
+                  type: 'base64',
+                  media_type: 'image/jpeg',
+                  data: currentImageBase64
+                }
+              },
+              {
+                type: 'text',
+                text: prompts[currentType]
+              }
+            ]
+          }]
+        })
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error?.message || 'API Fehler');
+      }
+
+      const text = data.content[0].text;
+      const clean = text.replace(/```json|```/g, '').trim();
+      currentResult = JSON.parse(clean);
+      showResult(currentResult);
+
+    } catch (err) {
+      showError('Fehler: ' + err.message);
+    } finally {
+      btn.classList.remove('loading');
+      btn.disabled = false;
+    }
+  }
+
+  function showResult(data) {
+    const area = document.getElementById('resultArea');
+    document.getElementById('emptyResult').style.display = 'none';
+    area.classList.add('visible');
+    area.innerHTML = '';
+
+    Object.entries(data).forEach(([key, val]) => {
+      const row = document.createElement('div');
+      row.className = 'result-row';
+      row.innerHTML = `<span class="result-key">${key}</span><span class="result-value">${val}</span>`;
+      area.appendChild(row);
+    });
+
+    document.getElementById('saveBtn').style.display = 'block';
+  }
+
+  function showError(msg) {
+    const el = document.getElementById('errorMsg');
+    el.textContent = msg;
+    el.style.display = 'block';
+  }
+
+  function saveEntry() {
+    if (!currentResult) return;
+    const entry = { type: currentType, timestamp: new Date().toISOString(), ...currentResult };
+    entries.push(entry);
+    localStorage.setItem('tc_entries', JSON.stringify(entries));
+    renderLog();
+    document.getElementById('saveBtn').style.display = 'none';
+    document.getElementById('saveBtn').textContent = '✓ Gespeichert!';
+  }
+
+  function renderLog() {
+    const el = document.getElementById('logContent');
+    if (entries.length === 0) {
+      el.innerHTML = '<div class="empty-log">Noch keine Einträge gespeichert.</div>';
+      document.getElementById('exportBtn').style.display = 'none';
+      return;
+    }
+
+    document.getElementById('exportBtn').style.display = 'inline-block';
+
+    // Collect all keys
+    const allKeys = [...new Set(entries.flatMap(e => Object.keys(e)))];
+
+    let html = '<table class="log-table"><thead><tr>';
+    allKeys.forEach(k => { html += `<th>${k}</th>`; });
+    html += '</tr></thead><tbody>';
+
+    entries.slice().reverse().forEach(e => {
+      html += '<tr>';
+      allKeys.forEach(k => {
+        const v = e[k] !== undefined ? e[k] : '—';
+        html += `<td class="${typeof v === 'number' ? 'num' : ''}">${v}</td>`;
+      });
+      html += '</tr>';
+    });
+
+    html += '</tbody></table>';
+    el.innerHTML = html;
+  }
+
+  function exportCSV() {
+    if (!entries.length) return;
+    const allKeys = [...new Set(entries.flatMap(e => Object.keys(e)))];
+    let csv = allKeys.join(';') + '\n';
+    entries.forEach(e => {
+      csv += allKeys.map(k => e[k] !== undefined ? String(e[k]).replace(/;/g, ',') : '').join(';') + '\n';
+    });
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = 'trainingscoach_daten.csv';
+    a.click();
+  }
+
+  // Init
+  const savedKey = localStorage.getItem('tc_apikey');
+  if (savedKey) {
+    document.getElementById('apiKey').value = '●●●●●●●●●●●●●●●●';
+    document.getElementById('keyMsg').style.display = 'block';
+  }
+  renderLog();
+</script>
+</body>
+</html>
